@@ -1,81 +1,44 @@
-teknek (tekˈnēk)
-=========
-
-Stream Processing Platform
-
-tech·nique
-/tekˈnēk/
-noun
-
-a way of carrying out a particular task, esp. the execution or performance of an artistic work or a scientific procedure.
-
-Full documenation
------
-Read the [Documentation] (https://github.com/edwardcapriolo/teknek/wiki/_pages)
-
-Terminology
------
-
-Feed - An abstraction for an input source. A feed produces tuples. A feed can be a message queue, new rows in a relational database, or anything else you may want to process.
-
-Tuple - a map that contains 0 or more key value pairs, could be thought of a row.
-
-Operator - An abstraction that takes a tuple as input and optionally produces a tuple as output.
-
-Plan - Connects a feed to a series of operators . Data moves from the feed while being transformed be the operators.
-
-Components
-----
-Zookeeper - Zookeeper is a distributed coordination service. Teknek uses zookeeper to store Plan's as well as the state of worker nodes.
-
-Teknek-core(worker) - This component runs on a cluster of machine executing the work described by the plan
-
-Teknek-web - This component provides the front end to configure and manage Teknek. From the interface you can create and modify plans and debug the output and input from feeds and operators.
-
-Build Instructions
-----
-Currently the project is organized as several separate maven projects with dependencies. While using a maven multiple-module project may not be out of the question, for now it seems better to serparate core functionality from plugable integrations. By keeping the classpath thin we can potentially avoid
-complicated classloader issues down the road.
-
-Run these commands:
-
-    git clone <this github>
-    sh build.sh
+Starts the stream-stack KZCT (Kafka Zookeeper Cassandra Teknek) making it easy to play with teknek
 
 
-Teknek integrations
-----
+cassandra port 9157
+zookeeper port 2181
+ 
+mvn clean install assembly:single
 
-Teknek is desigigned so that it can integrated with software currently in your software stack. To do this its core is designed to be agnostic and plugable. For example, a Feed could be constructed over the Kafka message queue system, after processing the results can be written to a NoSQL database like Cassandra. However data can just as easily be read from a MySQL database and written to HBase by swapping components in the plan.
+    cd target/teknek-stream-stack-0.0.1-SNAPSHOT/teknek-stream-stack-0.0.1-SNAPSHOT/
 
-Teknek provides several out-of-the-box implementations of Feeds an Operators to help users get up and running quickly. 
+or extract tar
 
-teknek-cassandra - Cassandra is a nosql data store. This package includes operators to write data and increment counters.
-teknek-kafka - Kafka is a distributed message queue. Teknek can use kafka's partitioning ability to easily achive group-by semantics. Kafka support includes Feed and output operator.
+    target/teknek-stream-stack-0.0.1-SNAPSHOT.tar.gz
 
-Stream Operator Language (SOL)
------
 
-The goal of SOL is to provide a language to build a Plan by linking Feeds to a tree of Operators. This language allows the user to wire together components without using an IDE. Not only can users wire together compoenents, they can also write code inline for rapid prototyping. 
+[edward@jackintosh teknek-stream-stack]$ cat /tmp/streamstack.properties 
 
-    teknek> create plan k
-    plan> configure feed k
-    feed> set class as io.teknek.kafka.SimpleKafkaFeed
-    feed> set feedspec as url
-    feed> set script as http://localhost:8080//teknek-web/Serve/teknek-kafka-0.0.1-SNAPSHOT-jar-with-dependencies.jar
-    feed> set property simple.kafka.feed.consumer.group as 'group1'
-    feed> set property simple.kafka.feed.reset.offset as 'yes'
-    feed> set property simple.kafka.feed.partitions as 1
-    feed> set property simple.kafka.feed.topic as 'clickstream'
-    feed> set property simple.kafka.feed.zookeeper.connect as 'localhost:2181'
-    feed> exit
-    plan> import https://raw.github.com/edwardcapriolo/teknek/master/teknek-core/src/test/resources/bundle_io.teknek_itests1.0.0.json
-    plan> load io.teknek groovy_identity operator as groovy_identity
-    operator> exit
-    plan> set root groovy_identity
-    plan> set maxworkers 1
-    plan> set tupleRetry 1
-    plan> set offsetCommitInterval 1
-    plan> save
+    starter.embeddedzookeeper=true
+    starter.embeddedzookeeper.log=./target/zk_log
+    starter.embeddedzookeeper.snap=./target/zk_log
+    starter.embeddedkafka=true
+    starter.embeddedkafka.log=./target/kflog
 
+
+    [edward@jackintosh teknek-stream-stack-0.0.1-SNAPSHOT]$ sh start-all.sh 
+    DEBUG 01:27:02,122 getResourceAsStream failed to load properties
+    INFO 01:27:02,137 Starting embedded zookeeper
+    INFO 01:27:02,137 This is only appropriate for single node deployments
+    DEBUG 01:27:02,352 getResourceAsStream failed to load properties
+    INFO 01:27:02,361 starting single node zookeeper server on localhost 2181
+    DEBUG 01:27:02,593 my UUID56a84114-97e1-449f-a17d-1f02e8937c07
+    connecting to localhost:2181
+    WARN 01:27:02,846 Exception causing close of session 0x0 due to java.io.IOException: ZooKeeperServer not running
+    WARN 01:27:03,140 Property enable.zookeeper is not valid
+    ERROR 01:27:03,741 Unable to initialize MemoryMeter (jamm not specified as javaagent).  This means Cassandra will be unable to measure object sizes accurately and may consequently OOM.
+    WARN 01:27:04,209 MemoryMeter uninitialized (jamm not specified as java agent); KeyCache size in JVM Heap will not be calculated accurately. Usually this means cassandra-env.sh disabled jamm because you are using a buggy JRE; upgrade to the Sun JRE instead
+     WARN 01:27:04,923 No host ID found, created 756188f1-41a5-41e6-bdc5-4240357f1ff2 (Note: This should happen exactly once per node).
+    INFO 01:27:04,963 Creating /teknek heirarchy
+    DEBUG 01:27:05,025 Children found in zk[]
+    WARN 01:27:05,177 Generated random token [-2432490598404475305]. Random tokens will result in an unbalanced ring; see http://wiki.apache.org/cassandra/Operations
+    DEBUG 01:27:10,027 Children found in zk[]
+    DEBUG 01:27:15,028 Children found in zk[]
+    DEBUG 01:27:20,029 Children found in zk[]
 
